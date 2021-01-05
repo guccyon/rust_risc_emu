@@ -1,3 +1,5 @@
+mod clike;
+
 fn main() {
-    println!("Hello, world!");
+    clike::emulate();
 }
