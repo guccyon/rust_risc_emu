@@ -48,28 +48,28 @@ fn assembler(rom: &mut Memory) {
 }
 
 fn mov(ra: u16, rb: u16) -> u16 {
-    0
+    (Operation::MOV as u16) << 11 | ra << 8 | rb << 5
 }
 fn add(ra: u16, rb: u16) -> u16 {
     (Operation::ADD as u16) << 11 | ra << 8 | rb << 5
 }
 fn sub(ra: u16, rb: u16) -> u16 {
-    0
+    (Operation::SUB as u16) << 11 | ra << 8 | rb << 5
 }
 fn and(ra: u16, rb: u16) -> u16 {
-    0
+    (Operation::AND as u16) << 11 | ra << 8 | rb << 5
 }
 fn or(ra: u16, rb: u16) -> u16 {
-    0
+    (Operation::OR as u16) << 11 | ra << 8 | rb << 5
 }
 fn sl(ra: u16) -> u16 {
-    0
+    (Operation::SL as u16) << 11 | ra << 8
 }
 fn sr(ra: u16) -> u16 {
-    0
+    (Operation::SR as u16) << 11 | ra << 8
 }
 fn sra(ra: u16) -> u16 {
-    0
+    (Operation::SRA as u16) << 11 | ra << 8
 }
 fn ldl(ra: u16, ival: u16) -> u16 {
     (Operation::LDL as u16) << 11 | ra << 8 | ival & 0x00ff
@@ -87,7 +87,7 @@ fn jmp(addr: u16) -> u16 {
     (Operation::JMP as u16) << 11 | addr & 0x00ff
 }
 fn ld(ra: u16, addr: u16) -> u16 {
-    0
+    (Operation::LD as u16) << 11 | addr & 0x00ff
 }
 fn st(ra: u16, addr: u16) -> u16 {
     (Operation::ST as u16) << 11 | ra << 8 | addr & 0x00ff
@@ -125,32 +125,38 @@ pub fn emulate() {
     let mut pc: usize = 0;
     let mut reg = [0; 8];
     let mut flag: bool = false;
-    let mut ir: u16 = 0xF;
 
     loop {
         if rom.len() <= pc {
             break;
         }
 
-        ir = rom[pc];
+        let ir = rom[pc];
         let op = op_code(ir).unwrap();
         pc += 1;
 
         use Operation::*;
         match op {
+            MOV => reg[op_reg_a(ir)] = reg[op_reg_b(ir)],
             ADD => reg[op_reg_a(ir)] += reg[op_reg_b(ir)],
+            SUB => reg[op_reg_a(ir)] += reg[op_reg_b(ir)],
+            AND => reg[op_reg_a(ir)] = reg[op_reg_a(ir)] & reg[op_reg_b(ir)],
+            OR => reg[op_reg_a(ir)] = reg[op_reg_a(ir)] | reg[op_reg_b(ir)],
+            SL => reg[op_reg_a(ir)] = reg[op_reg_a(ir)] << 1,
+            SR => reg[op_reg_a(ir)] = reg[op_reg_a(ir)] >> 1,
+            SRA => reg[op_reg_a(ir)] = reg[op_reg_a(ir)] & 0x8000 | reg[op_reg_a(ir)] >> 1,
             LDH => reg[op_reg_a(ir)] = op_data(ir) << 8 | reg[op_reg_a(ir)] & 0x00ff,
             LDL => reg[op_reg_a(ir)] = reg[op_reg_a(ir)] & 0xff00 | op_data(ir),
             CMP => flag = reg[op_reg_a(ir)] == reg[op_reg_b(ir)],
             JE => {
                 if flag {
-                    pc = op_addr(ir);
+                    pc = op_addr(ir)
                 }
             }
             JMP => pc = op_addr(ir),
+            LD => reg[op_reg_a(ir)] = ram[op_addr(ir)],
             ST => ram[op_addr(ir)] = reg[op_reg_a(ir)],
             HLT => break,
-            _ => continue,
         }
 
         println!(
