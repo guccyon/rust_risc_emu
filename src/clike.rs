@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use num_derive::FromPrimitive;
 use num_traits::FromPrimitive;
 
@@ -86,7 +87,7 @@ fn je(addr: u16) -> u16 {
 fn jmp(addr: u16) -> u16 {
     (Operation::JMP as u16) << 11 | addr & 0x00ff
 }
-fn ld(ra: u16, addr: u16) -> u16 {
+fn ld(_ra: u16, addr: u16) -> u16 {
     (Operation::LD as u16) << 11 | addr & 0x00ff
 }
 fn st(ra: u16, addr: u16) -> u16 {
